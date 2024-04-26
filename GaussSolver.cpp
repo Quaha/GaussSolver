@@ -1,5 +1,6 @@
 #include <vector>
 #include <iostream>
+#include <cmath>
 
 #include "Vector.hpp"
 #include "Matrix.hpp"
@@ -10,12 +11,11 @@ bool isZero(long double V) {
 }
 
 std::vector<Vector> GaussSolver::solve(const Matrix &A, const Vector &B) {
-	if (A.matrix.size() == 0 || A.matrix.size() != B.size()) {
+	int N = A.size().first;
+	int M = A.size().second;
+	if (N == 0 || N != B.size()) {
 		return {};
 	}
-
-	int N = A.matrix.size();
-	int M = A.matrix[0].size();
 
 	std::vector<std::vector<long double>> SLE(N, std::vector<long double>(M + 1, 0));
 
@@ -29,7 +29,6 @@ std::vector<Vector> GaussSolver::solve(const Matrix &A, const Vector &B) {
 		SLE[i][M] = B[i];
 	}
 	
-	std::vector<std::pair<int, int>> swaps_stack(0);
 	for (int i = 0, j = 0; i < N && j < M; i++, j++) {
 		int best = i;
 		for (int k = i + 1; k < N; k++) {
@@ -46,9 +45,11 @@ std::vector<Vector> GaussSolver::solve(const Matrix &A, const Vector &B) {
 			SLE[i][k] /= SLE[i][j];
 		}
 		SLE[i][j] = 1;
+
 		for (int i1 = 0; i1 < N; i1++) {
 			if (i1 == i) continue;
 			long double C = SLE[i1][j] / SLE[i][j];
+
 			for (int k = j + 1; k < M + 1; k++) {
 				SLE[i1][k] -= SLE[i][k] * C;
 			}
@@ -90,37 +91,35 @@ std::vector<Vector> GaussSolver::solve(const Matrix &A, const Vector &B) {
 		result[j][M] = SLE[i][M];
 	}
 
-	std::vector<Vector> Tresult(M + 1, Vector(M));
+	std::vector<Vector> resultT(M + 1, Vector(M));
 	for (int i = 0; i < M; i++) {
 		for (int j = 0; j < M + 1; j++) {
-			Tresult[j][i] = result[i][j];
+			resultT[j][i] = result[i][j];
 		}
 	}
 
-	Vector::swap(Tresult[0], Tresult.back());
-	for (int i = 0; i < Tresult[0].size(); i++) {
-		if (isZero(Tresult[0][i])) {
-			Tresult[0][i] = 0;
+	Vector::swap(resultT[0], resultT.back());
+	for (int i = 0; i < resultT[0].size(); i++) {
+		if (isZero(resultT[0][i])) {
+			resultT[0][i] = 0;
 		}
 	}
 
-	for (int i = 1; i < Tresult.size(); i++) {
+	for (int i = 1; i < resultT.size(); i++) {
 		bool flag = true;
 		for (int j = 0; j < M; j++) {
-			if (!isZero(Tresult[i][j])) {
+			if (!isZero(resultT[i][j])) {
 				flag = false;
 			}
 			else {
-				Tresult[i][j] = 0;
+				resultT[i][j] = 0;
 			}
 		}
 		if (flag) {
-			Vector::swap(Tresult[i], Tresult.back());
-			Tresult.pop_back();
+			Vector::swap(resultT[i], resultT.back());
+			resultT.pop_back();
 			i--;
 		}
 	}
-	return Tresult;
-
-	return {};
+	return resultT;
 }
